@@ -1,4 +1,4 @@
-function generate_randomQP_problem(n::Int = 10000, seed::Int=1, sparsity::Float64=1e-1, rank::Int = 10, regularization::Float64=0.01)
+function generate_randomQP_problem(n::Int = 1000000, seed::Int=1, sparsity::Float64=1e-4, rank::Int = 1000, regularization::Float64=0.01)
     Random.seed!(seed)
     m = Int(0.5 * n)
 

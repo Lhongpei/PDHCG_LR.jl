@@ -226,7 +226,7 @@ function main()
         1.0,
         1.0,
         false,
-        6,
+        2,
         true,
         40,
         termination_params,

@@ -495,6 +495,7 @@ function scale_problem(
     # problem.objective_matrix = mul!(problem.objective_matrix, diag_tmp_var, problem.objective_matrix)
     # problem.objective_matrix = mul!(problem.objective_matrix, problem.objective_matrix, diag_tmp_var)
     problem.lorank_obj_matrix = problem.lorank_obj_matrix * diag_tmp_var
+    problem.condition = 1.0 ./ variable_rescaling .* 1.0 ./ variable_rescaling .* problem.condition 
     #println("1d")#FIXME
     problem.variable_upper_bound .*= variable_rescaling
     problem.variable_lower_bound .*= variable_rescaling
