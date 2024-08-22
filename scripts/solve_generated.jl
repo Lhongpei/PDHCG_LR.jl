@@ -198,7 +198,7 @@ function main()
     qpw = copy(qp)
     oldstd = stdout
     redirect_stdout(devnull)
-    warm_up(qpw, gpu_flag);
+    #warm_up(qpw, gpu_flag);
     redirect_stdout(oldstd)
 
     restart_params = PDHCG.construct_restart_parameters(

@@ -376,7 +376,7 @@ function ruiz_rescaling(
                 sqrt.(
                 max.(
                     vec(maximum(abs, constraint_matrix, dims = 1)),
-                    vec(maximum(abs, lorank_obj_matrix' * lorank_obj_matrix, dims = 1)),
+                    vec(maximum(abs, lorank_obj_matrix' * lorank_obj_matrix + problem.regularization.* spdiagm(ones(length(problem.variable_upper_bound))), dims = 1)),
                     0.0*abs.(objective_vector),
                 ),
                 )
@@ -437,7 +437,7 @@ function pock_chambolle_rescaling(
         vec((mapreduce(
             t -> abs(t)^(2 - alpha),
             +,
-            lorank_obj_matrix' * lorank_obj_matrix,
+            lorank_obj_matrix' * lorank_obj_matrix + problem.regularization.* spdiagm(ones(length(problem.variable_upper_bound))),
             dims = 1,
             init = 0.0,
         ))).+
