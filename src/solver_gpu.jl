@@ -111,11 +111,7 @@ function compute_next_primal_solution!(
     next_primal_obj_product::CuVector{Float64}, 
     first_iter::Bool
 )
-    if first_iter
-        println("check next primal before", any(isnan.(next_primal)))
-        println("check current direction before", any(isnan.(current_direction)))  
-        println("check current_primal_obj_product before", any(isnan.(current_primal_obj_product)))
-    end
+
     max_CG_iter = 20
     current_gradient .= current_primal_obj_product .+ problem.objective_vector .- current_dual_product
     current_direction .= current_gradient
@@ -632,6 +628,7 @@ function optimize_gpu(
     else
         solver_state.primal_weight = params.primal_importance
     end
+
 
     solver_state.step_size = 1/norm_A
 
