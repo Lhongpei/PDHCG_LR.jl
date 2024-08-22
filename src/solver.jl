@@ -150,6 +150,7 @@ function estimate_maximum_singular_value(
     epsilon = 1.0 - (1.0 - desired_relative_error)^2
     x = randn(Random.MersenneTwister(seed), size(matrix, 2))
     x .= x / norm(x, 2)
+
     temp = Vector{Float64}(undef, size(matrix, 1))
     number_of_power_iterations = 0
     num_col = size(matrix, 2)
@@ -160,7 +161,9 @@ function estimate_maximum_singular_value(
     ) > probability_of_failure
         mul!(temp, matrix, x)
         mul!(x, matrix', temp)
+
         x .= x / norm(x, 2)
+
         number_of_power_iterations += 1
     end
 

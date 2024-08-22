@@ -111,24 +111,18 @@ function compute_next_primal_solution!(
     next_primal_obj_product::CuVector{Float64}, 
     first_iter::Bool
 )
+    if first_iter
+        println("check next primal before", any(isnan.(next_primal)))
+        println("check current direction before", any(isnan.(current_direction)))  
+        println("check current_primal_obj_product before", any(isnan.(current_primal_obj_product)))
+    end
     max_CG_iter = 20
-
     current_gradient .= current_primal_obj_product .+ problem.objective_vector .- current_dual_product
     current_direction .= current_gradient
     tmp_rank_vec = CUDA.zeros(Float64, problem.num_rank)
     if first_iter
-        alpha = step_size / primal_weight
         next_primal .= next_primal .- (step_size/primal_weight).* current_direction
         CG_iter = 0
-        # println("check next primal", any(isnan.(next_primal)))
-        # println("check current direction", any(isnan.(current_direction)))
-        # println("check current gradient", any(isnan.(current_gradient)))
-        # println("check current primal obj product", any(isnan.(current_primal_obj_product)))
-        # println("check current dual product", any(isnan.(current_dual_product)))
-        # println("check current primal solution", any(isnan.(current_primal_solution)))
-        # println("check primal_weight", isnan(primal_weight))
-        # println("primal_weight", primal_weight)
-
     else
         gg = CUDA.dot(current_gradient, current_gradient)
 
@@ -140,7 +134,7 @@ function compute_next_primal_solution!(
             CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, current_direction, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
             CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, CG_product,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
 
-            CG_product .+= (primal_weight / step_size + problem.regularization).*current_direction
+            CG_product .+= (primal_weight / step_size .+ problem.condition).*current_direction
             dHd = CUDA.dot(current_direction, CG_product)
             alpha = gg / dHd
 
@@ -161,7 +155,7 @@ function compute_next_primal_solution!(
     if total_iteration % 40 == 1 || first_iter
         CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, next_primal, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
         CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, next_primal_obj_product,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
-        next_primal_obj_product .+= problem.regularization .* next_primal
+        next_primal_obj_product .+= problem.condition .* next_primal
     else
         next_primal_obj_product .= current_gradient .- problem.objective_vector .+ current_dual_product .- (primal_weight / step_size).*(next_primal .- current_primal_solution)
     end
@@ -216,7 +210,7 @@ function compute_next_primal_solution_gd_BB!(
         end
         CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, next_primal, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
         CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, current_gradient,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
-        current_gradient .= current_gradient .+ (primal_weight / step_size) .* ((1 + problem.regularization) .* next_primal .- current_primal_solution) .+ problem.objective_vector .- current_dual_product
+        current_gradient .= current_gradient .+ (primal_weight / step_size) .* ((1 .+ problem.condition) .* next_primal .- current_primal_solution) .+ problem.objective_vector .- current_dual_product
         alpha = gg / CUDA.dot(inner_delta_primal, current_gradient .- last_gradient)
 
         CUDA.copyto!(last_primal, next_primal)
@@ -228,7 +222,7 @@ function compute_next_primal_solution_gd_BB!(
     end
     CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, next_primal, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
     CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, next_primal_obj_product,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
-    next_primal_obj_product .+= problem.regularization .* next_primal
+    next_primal_obj_product .+= problem.condition .* next_primal
     CUDA.CUSPARSE.mv!('N', 1.0, problem.constraint_matrix, next_primal, 0.0, next_primal_product,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
 
 
@@ -303,7 +297,7 @@ function update_solution_in_solver_state!(
 )
     solver_state.delta_primal .= buffer_state.next_primal .- solver_state.current_primal_solution
     solver_state.delta_dual .= buffer_state.next_dual .- solver_state.current_dual_solution
-    print("next_primal", buffer_state.next_primal)
+
     solver_state.current_primal_solution .= copy(buffer_state.next_primal)
     solver_state.current_dual_solution .= copy(buffer_state.next_dual)
     solver_state.current_dual_product .= copy(buffer_state.next_dual_product)
@@ -366,6 +360,7 @@ function compute_interaction_and_movement(
     norm_delta_dual = CUDA.dot(buffer_state.delta_dual,buffer_state.delta_dual)
 
     movement = 0.5 * solver_state.primal_weight * norm_delta_primal + (0.5 / solver_state.primal_weight) * norm_delta_dual
+
     return interaction, movement
 end
 """
@@ -491,7 +486,7 @@ function optimize_gpu(
 )
     validate(original_problem)
     qp_cache = cached_quadratic_program_info(original_problem)
-    stopkkt_Q = true  #true means stop kkt is calculate by Q
+    stopkkt_Q = false  #true means stop kkt is calculate by Q
     empty_lb_inf = isempty(findall(original_problem.variable_lower_bound.>-Inf))
     empty_ub_inf = isempty(findall(original_problem.variable_upper_bound.<Inf))
     CG_switch = empty_lb_inf && empty_ub_inf
@@ -536,7 +531,7 @@ function optimize_gpu(
     d_problem = d_scaled_problem.scaled_qp
 
     #println("begin to Power method agin")#FIXME
-    norm_P, number_of_power_iterations_P = estimate_maximum_singular_value(scaled_problem.scaled_qp.lorank_obj_matrix)
+    norm_P, number_of_power_iterations_P = estimate_maximum_singular_value(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
     norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(scaled_problem.scaled_qp.constraint_matrix)
 
     #println("begin to initialization")#FIXME
@@ -558,7 +553,7 @@ function optimize_gpu(
         0,                   # CG_number_iterations
         nothing,
         nothing,
-        norm_P ^ 2 + scaled_problem.scaled_qp.regularization,
+        norm_P,
         norm_A,
         CUDA.zeros(Float64, primal_size),    # current_gradient
         CUDA.zeros(Float64, primal_size),    # current_direction

@@ -13,7 +13,7 @@ mutable struct CuQuadraticProgrammingProblem
     right_hand_side::CuVector{Float64}
     num_equalities::Int64
     num_rank::Int64
-    regularization::Float64
+    condition::CuVector{Float64}
 end
 
 mutable struct CuScaledQpProblem
@@ -65,7 +65,7 @@ function qp_cpu_to_gpu(problem::QuadraticProgrammingProblem)
         d_right_hand_side,
         problem.num_equalities,
         problem.num_rank,
-        problem.regularization
+        problem.condition,
     )
 end
 

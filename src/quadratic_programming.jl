@@ -33,7 +33,7 @@ mutable struct QuadraticProgrammingProblem
   right_hand_side::Vector{Float64}
   num_equalities::Int64
   num_rank::Int64
-  regularization::Float64
+  condition::Vector{Float64}
 end
 
 function Base.copy(qpp::QuadraticProgrammingProblem)
