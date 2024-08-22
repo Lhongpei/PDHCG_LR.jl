@@ -3,7 +3,7 @@ A QuadraticProgrammingProblem struct specifies a quadratic programming problem
 with the following format:
 
 ```
-minimize 1/2 x' * objective_matrix * x + objective_vector' * x
+minimize 1/2 x' * lorank_obj_matrix'* lorank_obj_matrix * x + objective_vector' * x
           + objective_constant
 
 s.t. constraint_matrix[1:num_equalities, :] * x =
@@ -24,13 +24,16 @@ mutable struct QuadraticProgrammingProblem
   variable_upper_bound::Vector{Float64}
   isfinite_variable_lower_bound::Vector{Bool}
   isfinite_variable_upper_bound::Vector{Bool}
-  objective_matrix::SparseMatrixCSC{Float64,Int64}
+  #objective_matrix::SparseMatrixCSC{Float64,Int64}
+  lorank_obj_matrix::SparseMatrixCSC{Float64,Int64}
   objective_vector::Vector{Float64}
   objective_constant::Float64
   constraint_matrix::SparseMatrixCSC{Float64,Int64}
   constraint_matrix_t::SparseMatrixCSC{Float64,Int64}
   right_hand_side::Vector{Float64}
   num_equalities::Int64
+  num_rank::Int64
+  regularization::Float64
 end
 
 function Base.copy(qpp::QuadraticProgrammingProblem)
@@ -172,13 +175,13 @@ function print_problem_details(qp::QuadraticProgrammingProblem)
     minimum(row_norms)
   )
 
-  if length(nonzeros(qp.objective_matrix)) > 0
-    print("  Absolute value of objective matrix elements: ")
+  if length(nonzeros(qp.lorank_obj_matrix)) > 0
+    print("  Absolute value of low rank objective matrix elements: ")
     Printf.@printf(
       "largest=%f, smallest=%f, avg=%f\n",
-      maximum(abs, nonzeros(qp.objective_matrix)),
-      minimum(abs, nonzeros(qp.objective_matrix)),
-      sum(abs, nonzeros(qp.objective_matrix)) /
+      maximum(abs, nonzeros(qp.lorank_obj_matrix)),
+      minimum(abs, nonzeros(qp.lorank_obj_matrix)),
+      sum(abs, nonzeros(qp.lorank_obj_matrix)) /
       length(nonzeros(qp.constraint_matrix))
     )
   end
@@ -245,11 +248,11 @@ function linear_programming_problem(
 )
 
   num_variables = length(variable_lower_bound)
-  objective_matrix = spzeros(num_variables, num_variables)
+  lo_obj_matrix = spzeros(1, num_variables)
   return QuadraticProgrammingProblem(
     variable_lower_bound,
     variable_upper_bound,
-    objective_matrix,
+    lo_obj_matrix,
     objective_vector,
     objective_constant,
     sparse(constraint_matrix),
@@ -262,7 +265,7 @@ end
 Returns true if and only if the objective matrix is zero.
 """
 function is_linear_programming_problem(problem::QuadraticProgrammingProblem)
-  return nnz(problem.objective_matrix) == 0
+  return nnz(problem.lorank_obj_matrix) == 0
 end
 
 """

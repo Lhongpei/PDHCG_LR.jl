@@ -5,13 +5,15 @@ mutable struct CuQuadraticProgrammingProblem
     variable_upper_bound::CuVector{Float64}
     isfinite_variable_lower_bound::CuVector{Bool}
     isfinite_variable_upper_bound::CuVector{Bool}
-    objective_matrix::CUDA.CUSPARSE.CuSparseMatrixCSR{Float64,Int32}
+    lorank_obj_matrix::CUDA.CUSPARSE.CuSparseMatrixCSR{Float64,Int32}
     objective_vector::CuVector{Float64}
     objective_constant::Float64
     constraint_matrix::CUDA.CUSPARSE.CuSparseMatrixCSR{Float64,Int32}
     constraint_matrix_t::CUDA.CUSPARSE.CuSparseMatrixCSR{Float64,Int32}
     right_hand_side::CuVector{Float64}
     num_equalities::Int64
+    num_rank::Int64
+    regularization::Float64
 end
 
 mutable struct CuScaledQpProblem
@@ -44,7 +46,7 @@ function qp_cpu_to_gpu(problem::QuadraticProgrammingProblem)
     copyto!(d_objective_vector, problem.objective_vector)
     copyto!(d_right_hand_side, problem.right_hand_side)
 
-    d_objective_matrix = CUDA.CUSPARSE.CuSparseMatrixCSR(problem.objective_matrix)
+    d_lorank_obj_matrix = CUDA.CUSPARSE.CuSparseMatrixCSR(problem.lorank_obj_matrix)
     d_constraint_matrix = CUDA.CUSPARSE.CuSparseMatrixCSR(problem.constraint_matrix)
     d_constraint_matrix_t = CUDA.CUSPARSE.CuSparseMatrixCSR(problem.constraint_matrix')
 
@@ -55,13 +57,15 @@ function qp_cpu_to_gpu(problem::QuadraticProgrammingProblem)
         d_variable_upper_bound,
         d_isfinite_variable_lower_bound,
         d_isfinite_variable_upper_bound,
-        d_objective_matrix,
+        d_lorank_obj_matrix,
         d_objective_vector,
         problem.objective_constant,
         d_constraint_matrix,
         d_constraint_matrix_t,
         d_right_hand_side,
         problem.num_equalities,
+        problem.num_rank,
+        problem.regularization
     )
 end
 

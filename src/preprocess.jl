@@ -24,12 +24,18 @@ function validate(p::QuadraticProgrammingProblem)
         != length(p.objective_vector)= $(length(p.objective_vector))"
         error_found = true
     end
-    if size(p.objective_matrix) !=
-        (length(p.objective_vector), length(p.objective_vector))
-        @info "$(size(p.objective_matrix)) == size(p.objective_matrix)
-        is not square with length $(length(p.objective_vector))"
+    if size(p.lorank_obj_matrix) !=
+        (p.num_rank, length(p.objective_vector))
+        @info "$(size(p.lorank_obj_matrix)) is not equal to
+        ($(p.num_rank), $(length(p.objective_vector)))"
         error_found = true
     end
+
+    if p.num_rank > length(p.objective_vector)
+        @info "$(p.num_rank) > $(length(p.objective_vector)), which is not allowed."
+        error_found = true
+    end
+
     if sum(p.variable_lower_bound .== Inf) > 0
         @info "sum(p.variable_lower_bound .== Inf) ==
                 $(sum(p.variable_lower_bound .== Inf))"
@@ -57,7 +63,7 @@ function validate(p::QuadraticProgrammingProblem)
                 QuadraticProgrammingProblem."
         error_found = true
     end
-    if any(!isfinite, nonzeros(p.objective_matrix))
+    if any(!isfinite, nonzeros(p.lorank_obj_matrix))
         @info "NaN or Inf found in objective matrix of QuadraticProgrammingProblem."
         error_found = true
     end
@@ -147,7 +153,7 @@ Removes the empty columns of a quadratic programming problem.
 """
 function remove_empty_columns(problem::QuadraticProgrammingProblem)
 
-    @assert iszero(problem.objective_matrix)
+    @assert iszero(problem.lorank_obj_matrix)
     is_empty_column = [
         isempty(nzrange(problem.constraint_matrix, col)) for
         col in 1:size(problem.constraint_matrix, 2)
@@ -172,8 +178,8 @@ function remove_empty_columns(problem::QuadraticProgrammingProblem)
     problem.objective_vector = problem.objective_vector[is_non_empty]
     problem.variable_lower_bound = problem.variable_lower_bound[is_non_empty]
     problem.variable_upper_bound = problem.variable_upper_bound[is_non_empty]
-    problem.objective_matrix =
-        problem.objective_matrix[is_non_empty, is_non_empty]
+    problem.lorank_obj_matrix =
+        problem.lorank_obj_matrix[:, is_non_empty]
     return empty_columns
 end
 
@@ -234,7 +240,7 @@ function presolve(
     original_dual_size, original_primal_size = size(qp.constraint_matrix)
     empty_rows = remove_empty_rows(qp)
     
-    if iszero(qp.objective_matrix)
+    if iszero(qp.lorank_obj_matrix)
         empty_columns = remove_empty_columns(qp)
     else
         empty_columns = Array{Int64,1}()
@@ -330,7 +336,7 @@ function l2_norm_rescaling(problem::QuadraticProgrammingProblem)
     num_constraints, num_variables = size(problem.constraint_matrix)
 
     norm_of_rows = sqrt.( vec(l2_norm(problem.constraint_matrix, 2)).^2 .+ 0.0* problem.right_hand_side.^2 )
-    norm_of_columns = sqrt.( vec(l2_norm(problem.constraint_matrix, 1)).^2 .+ vec(l2_norm(problem.objective_matrix, 1)).^2 .+ 0.0*problem.objective_vector.^2 )
+    norm_of_columns = sqrt.( vec(l2_norm(problem.constraint_matrix, 1)).^2 .+ vec(l2_norm(problem.lorank_obj_matrix' * problem.lorank_obj_matrix, 1)).^2 .+ 0.0*problem.objective_vector.^2 )
     norm_of_const = 0.0*sqrt( norm(problem.right_hand_side, 2)^2 + norm(problem.objective_vector, 2)^2 )
 
     norm_of_rows[iszero.(norm_of_rows)] .= 1.0
@@ -361,7 +367,7 @@ function ruiz_rescaling(
     #println("b")#FIXME
     for i in 1:num_iterations
         constraint_matrix = problem.constraint_matrix
-        objective_matrix = problem.objective_matrix
+        lorank_obj_matrix = problem.lorank_obj_matrix
         objective_vector = problem.objective_vector
         right_hand_side = problem.right_hand_side
         #println("c")#FIXME
@@ -370,7 +376,7 @@ function ruiz_rescaling(
                 sqrt.(
                 max.(
                     vec(maximum(abs, constraint_matrix, dims = 1)),
-                    vec(maximum(abs, objective_matrix, dims = 1)),
+                    vec(maximum(abs, lorank_obj_matrix' * lorank_obj_matrix, dims = 1)),
                     0.0*abs.(objective_vector),
                 ),
                 )
@@ -416,7 +422,7 @@ function pock_chambolle_rescaling(
     @assert 0 <= alpha <= 2
 
     constraint_matrix = problem.constraint_matrix
-    objective_matrix = problem.objective_matrix
+    lorank_obj_matrix = problem.lorank_obj_matrix
     right_hand_side = problem.right_hand_side
     objective_vector = problem.objective_vector
 
@@ -431,7 +437,7 @@ function pock_chambolle_rescaling(
         vec((mapreduce(
             t -> abs(t)^(2 - alpha),
             +,
-            objective_matrix,
+            lorank_obj_matrix' * lorank_obj_matrix,
             dims = 1,
             init = 0.0,
         ))).+
@@ -488,7 +494,7 @@ function scale_problem(
     #println("1c")#FIXME
     # problem.objective_matrix = mul!(problem.objective_matrix, diag_tmp_var, problem.objective_matrix)
     # problem.objective_matrix = mul!(problem.objective_matrix, problem.objective_matrix, diag_tmp_var)
-    problem.objective_matrix = diag_tmp_var * problem.objective_matrix * diag_tmp_var
+    problem.lorank_obj_matrix = problem.lorank_obj_matrix * diag_tmp_var
     #println("1d")#FIXME
     problem.variable_upper_bound .*= variable_rescaling
     problem.variable_lower_bound .*= variable_rescaling
@@ -573,12 +579,12 @@ function rescale_problem(
         println("Problem before rescaling:")
         print_problem_details(original_problem)
     end
-    println("1.")#FIXME
+    #println("1.")#FIXME
     num_constraints, num_variables = size(problem.constraint_matrix)
     constraint_rescaling = ones(num_constraints)
     variable_rescaling = ones(num_variables)
     constant_rescaling = 1.0
-    println("2.")#FIXME
+    #println("2.")#FIXME
     if l_inf_ruiz_iterations > 0
         con_rescale, var_rescale, const_rescale =
             ruiz_rescaling(problem, l_inf_ruiz_iterations, Inf)
@@ -586,14 +592,14 @@ function rescale_problem(
         variable_rescaling .*= var_rescale
         constant_rescaling *= const_rescale
     end
-    println("3.")#FIXME
+    #println("3.")#FIXME
     if l2_norm_rescaling_flag
         con_rescale, var_rescale, const_rescale = l2_norm_rescaling(problem)
         constraint_rescaling .*= con_rescale
         variable_rescaling .*= var_rescale
         constant_rescaling *= const_rescale
     end
-    println("4.")#FIXME
+    #println("4.")#FIXME
     if !isnothing(pock_chambolle_alpha)
         con_rescale, var_rescale, const_rescale =
         pock_chambolle_rescaling(problem, pock_chambolle_alpha)
@@ -601,7 +607,7 @@ function rescale_problem(
         variable_rescaling .*= var_rescale
         constant_rescaling *= const_rescale
     end
-    println("5.")#FIXME
+    #println("5.")#FIXME
     scaled_problem = ScaledQpProblem(
         original_problem,
         problem,
@@ -609,7 +615,7 @@ function rescale_problem(
         variable_rescaling,
         constant_rescaling,
     )
-    println("6.")#FIXME
+    #println("6.")#FIXME
     if verbosity >= 3
         if l_inf_ruiz_iterations == 0 && !l2_norm_rescaling_flag
         println("No rescaling.")

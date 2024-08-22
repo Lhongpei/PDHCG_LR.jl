@@ -18,7 +18,7 @@ mutable struct TwoSidedQpProblem
     "The objective vector."
     objective_vector::Vector{Float64}
     "The objective matrix."
-    objective_matrix::SparseMatrixCSC{Float64,Int64}
+    lorank_obj_matrix::SparseMatrixCSC{Float64,Int64}
   end
   
   """
@@ -78,7 +78,7 @@ mutable struct TwoSidedQpProblem
       qp.variable_upper_bound,
       isfinite_variable_lower_bound,
       isfinite_variable_upper_bound,
-      qp.objective_matrix,
+      qp.lorank_obj_matrix,
       qp.objective_vector,
       qp.objective_offset,
       qp.constraint_matrix,

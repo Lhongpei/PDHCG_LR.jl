@@ -8,7 +8,7 @@ folder_path = "./qptotal/"     # The folder path of the problems
 time_limit = 3600              # The time limit for each problem
 relat = 1e-6                   # The relative tolerance for the solver
 save_path = "saved_results/QP/$GPU_on"
-scale = Int(1e8)                 # The scale of the problem
+scale = Int(1e3)                 # The scale of the problem
 #---------------------------------------------
 #--------------------END----------------------
 
@@ -16,7 +16,7 @@ scale = Int(1e8)                 # The scale of the problem
 file_names = readdir(folder_path)
 problem_num = length(file_names)
 
-function run_solver(generator, save_path, use_gpu=0, GPU_id=0, time_limit=3600, relat=1e-6, scale=100000)
+function run_solver(generator, save_path, use_gpu=0, GPU_id=0, time_limit=3600, relat=1e-6, scale=1000)
     "
      `file_path`: Path to the quadratic programming instance file.
      `save_path`: Directory where the output files will be saved.

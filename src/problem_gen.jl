@@ -1,20 +1,15 @@
-function generate_randomQP_problem(n::Int, seed::Int=1, sparsity::Float64=1e-8)
+function generate_randomQP_problem(n::Int = 10000, seed::Int=1, sparsity::Float64=1e-8, rank::Int = 10, regularization::Float64=1e-2)
     Random.seed!(seed)
     m = Int(0.5 * n)
 
     # Generate problem data
-    P = sprandn(n, n, sparsity)
-    rowval = collect(1:n)
-    colptr = collect(1:n+1)
-    nzval = ones(n)
-    P = P * P' + 1e-02 * SparseMatrixCSC(n, n, colptr, rowval, nzval)
+    P = sprandn(rank, n, sparsity)
     q = randn(n)
     A = sprandn(m, n, sparsity)
 
     v = randn(n)   # Fictitious solution
     delta = rand(m)  # To get inequality
     ru = A * v + delta
-    rl = -Inf * ones(m)
     lb = -Inf * ones(n)
     ub = Inf * ones(n)
      
@@ -32,6 +27,8 @@ function generate_randomQP_problem(n::Int, seed::Int=1, sparsity::Float64=1e-8)
         -A',
         -ru,
         0,
+        rank,
+        regularization
     )
 end
 

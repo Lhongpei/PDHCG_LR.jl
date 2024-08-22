@@ -206,7 +206,7 @@ else
 
     while CG_iter <= max_CG_iter
         gkgk = gg
-        CG_product .= problem.objective_matrix * current_direction .+(primal_weight / step_size).*current_direction
+        CG_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * current_direction .+(primal_weight / step_size).*current_direction
         dHd = dot(current_direction, CG_product)
         alpha = gg / dHd
         next_primal .= next_primal .- alpha.* current_direction
@@ -224,7 +224,7 @@ end
     next_primal_product .= problem.constraint_matrix * next_primal
 
      if mod(total_iteration,40)==1 || first_iter
-         next_primal_obj_product .= problem.objective_matrix * next_primal
+         next_primal_obj_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal
      else
         next_primal_obj_product .= current_gradient .- problem.objective_vector .+ current_dual_product .- (primal_weight / step_size).*(next_primal .- current_primal_solution)
      end
@@ -283,7 +283,7 @@ function compute_next_primal_solution_gd_BB!(
         break
     end
     
-    current_gradient .= problem.objective_matrix * next_primal .+(primal_weight / step_size).*(next_primal.-current_primal_solution).+ problem.objective_vector .-current_dual_product
+    current_gradient .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal .+(primal_weight / step_size).*(next_primal.-current_primal_solution).+ problem.objective_vector .-current_dual_product
     alpha = gg/dot(inner_delta_primal,current_gradient.-last_gradient)
     last_primal.=next_primal
     last_gradient.=current_gradient
@@ -293,7 +293,7 @@ function compute_next_primal_solution_gd_BB!(
     k +=1
     end
 
-    next_primal_obj_product .= problem.objective_matrix * next_primal
+    next_primal_obj_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal
     next_primal_product .= problem.constraint_matrix * next_primal
     CG_iter = min(k,max_CG_iter)
 
@@ -524,7 +524,7 @@ function optimize(
 )
     validate(original_problem)
     qp_cache = cached_quadratic_program_info(original_problem)
-    original_norm_Q = estimate_maximum_singular_value(original_problem.objective_matrix)
+    original_norm_Q = estimate_maximum_singular_value(original_problem.lorank_obj_matrix' * original_problem.lorank_obj_matrix)
     flag_update_CG_bound = false
     stopkkt_Q = true
 
@@ -532,17 +532,7 @@ function optimize(
     empty_ub_inf = isempty(findall(original_problem.variable_upper_bound.<Inf))
     CG_switch = empty_lb_inf && empty_ub_inf
 
-    if original_problem.num_equalities >= 1
-        
-        G =  original_problem.constraint_matrix[1:original_problem.num_equalities,:]
-        G_square = G'*G
-        q =  original_problem.right_hand_side[1:original_problem.num_equalities]
-        norm_G = estimate_maximum_singular_value(G_square)
-        rho = 0.1*original_norm_Q[1]/(norm_G[1])
-        
-        original_problem.objective_matrix = original_problem.objective_matrix .+ rho .* G_square
-        original_problem.objective_vector = original_problem.objective_vector .- rho .* G'*q
-        end
+
 
     scaled_problem = rescale_problem(
         params.l_inf_ruiz_iterations,
