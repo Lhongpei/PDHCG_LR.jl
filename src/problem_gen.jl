@@ -1,6 +1,6 @@
-function generate_randomQP_problem(n::Int = 1000000, seed::Int=1, sparsity::Float64=1e-4, rank::Int = 1000, regularization::Float64=0.01)
+function generate_randomQP_problem(n::Int = 50000, seed::Int=1, sparsity::Float64=1e-3, rank::Int = 1000, regularization::Float64=1e-3)
     Random.seed!(seed)
-    m = Int(0.5 * n)
+    m = Int(1 * n)
 
     # Generate problem data
     P = sprandn(rank, n, sparsity)
