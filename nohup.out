@@ -1,0 +1,191 @@
+The latest version of Julia in the `release` channel is 1.10.4+0.x64.linux.gnu. You currently have `1.10.3+0.x64.linux.gnu` installed. Run:
+
+  juliaup update
+
+in your terminal shell to install Julia 1.10.4+0.x64.linux.gnu and update the `release` channel to that version.
+Model fingerprint: 97a6aa61
+
+Using Cardinal Optimizer v7.0.6 on Linux
+Hardware has 96 cores and 192 threads. Using instruction set X86_AVX512_E1 (14)
+Minimizing a QP problem
+
+The original problem has:
+    2000001 rows, 3000000 columns and 103994912 non-zero elements
+    2000000 quadratic objective elements
+The presolved problem has:
+    2000001 rows, 3000000 columns and 103994912 non-zero elements
+    2000000 quadratic objective elements
+
+Starting barrier solver using 96 threads
+
+Problem info:
+Dualized in presolve:            No
+Range of matrix coefficients:    [3e-09,6e+00]
+Range of rhs coefficients:       [1e+00,1e+00]
+Range of bound coefficients:     [1e+00,1e+00]
+Range of cost coefficients:      [4e-06,5e+00]
+Range of quadcost coefficients:  [1e-03,1e+03]
+
+[2561277] signal (11.2): Segmentation fault
+in expression starting at /home/lihongpei/PDHCG_CPU_GQ/copt_solve.jl:45
+Allocations: 383598269 (Pool: 381517433; Big: 2080836); GC: 382
+The latest version of Julia in the `release` channel is 1.10.4+0.x64.linux.gnu. You currently have `1.10.3+0.x64.linux.gnu` installed. Run:
+
+  juliaup update
+
+in your terminal shell to install Julia 1.10.4+0.x64.linux.gnu and update the `release` channel to that version.
+Setting parameter 'TimeLimit' to 7200
+Model fingerprint: b765472f
+
+Using Cardinal Optimizer v7.0.6 on Linux
+Hardware has 96 cores and 192 threads. Using instruction set X86_AVX512_E1 (14)
+Minimizing a QP problem
+
+The original problem has:
+    200001 rows, 300000 columns and 1400644 non-zero elements
+    200000 quadratic objective elements
+The presolved problem has:
+    199998 rows, 300000 columns and 1400641 non-zero elements
+    200000 quadratic objective elements
+
+Starting barrier solver using 96 threads
+
+Problem info:
+Dualized in presolve:            No
+Range of matrix coefficients:    [7e-07,5e+00]
+Range of rhs coefficients:       [1e+00,1e+00]
+Range of bound coefficients:     [1e+00,1e+00]
+Range of cost coefficients:      [5e-07,5e+00]
+Range of quadcost coefficients:  [1e-03,3e+02]
+
+Factor info:
+Number of free columns:          199997
+Number of dense columns:         0
+Number of matrix entries:        6.405e+06
+Number of factor entries:        3.937e+09
+Number of factor flops:          2.310e+14
+
+Iter       Primal.Obj         Dual.Obj      Compl  Primal.Inf  Dual.Inf    Time
+   0  +1.41848690e-02  -2.24809829e+07   1.13e+10    5.00e+02  1.77e+00    277s
+   1  -2.81278739e+02  -2.23026163e+07   3.44e+07    5.41e-01  1.91e-03    560s
+   2  -3.84760210e+01  -2.09988934e+06   2.45e+06    2.84e-02  1.01e-04    809s
+   3  +5.28535556e-02  -9.78147336e+02   1.03e+03    4.73e-06  1.68e-08   1093s
+   4  +3.59376620e-02  -8.30164471e+00   8.34e+00    1.35e-09  1.29e-12   1327s
+   5  -8.83731047e-01  -3.48795293e+00   2.60e+00    1.69e-10  3.87e-13   1751s
+   6  -2.08017893e+00  -3.40314979e+00   1.32e+00    6.29e-11  1.47e-13   2029s
+   7  -2.48295552e+00  -3.08604076e+00   6.03e-01    3.03e-11  6.62e-14   2319s
+
+[2581672] signal (15): Terminated
+in expression starting at /home/lihongpei/PDHCG_CPU_GQ/copt_solve.jl:45
+unknown function (ip: 0x7f9bd8441519)
+unknown function (ip: (nil))
+Allocations: 27416028 (Pool: 27410204; Big: 5824); GC: 21
+Cardinal Optimizer v7.0.6. Build date Jan 16 2024
+Copyright Cardinal Operations 2023. All Rights Reserved
+The latest version of Julia in the `release` channel is 1.10.4+0.x64.linux.gnu. You currently have `1.10.3+0.x64.linux.gnu` installed. Run:
+
+  juliaup update
+
+in your terminal shell to install Julia 1.10.4+0.x64.linux.gnu and update the `release` channel to that version.
+Setting parameter 'TimeLimit' to 7200
+Model fingerprint: b765472f
+
+Using Cardinal Optimizer v7.0.6 on Linux
+Hardware has 96 cores and 192 threads. Using instruction set X86_AVX512_E1 (14)
+Minimizing a QP problem
+
+The original problem has:
+    200001 rows, 300000 columns and 1400644 non-zero elements
+    200000 quadratic objective elements
+The presolved problem has:
+    199998 rows, 300000 columns and 1400641 non-zero elements
+    200000 quadratic objective elements
+
+Starting barrier solver using 96 threads
+
+Problem info:
+Dualized in presolve:            No
+Range of matrix coefficients:    [7e-07,5e+00]
+Range of rhs coefficients:       [1e+00,1e+00]
+Range of bound coefficients:     [1e+00,1e+00]
+Range of cost coefficients:      [5e-07,5e+00]
+Range of quadcost coefficients:  [1e-03,3e+02]
+
+Factor info:
+Number of free columns:          199997
+Number of dense columns:         0
+Number of matrix entries:        6.405e+06
+Number of factor entries:        3.937e+09
+Number of factor flops:          2.310e+14
+
+[2864738] signal (15): Terminated
+in expression starting at /home/lihongpei/PDHCG_CPU_GQ/copt_solve.jl:45
+unknown function (ip: 0x7f5786c407cb)
+unknown function (ip: (nil))
+Allocations: 27406898 (Pool: 27401111; Big: 5787); GC: 22
+Cardinal Optimizer v7.0.6. Build date Jan 16 2024
+Copyright Cardinal Operations 2023. All Rights Reserved
+The latest version of Julia in the `release` channel is 1.10.4+0.x64.linux.gnu. You currently have `1.10.3+0.x64.linux.gnu` installed. Run:
+
+  juliaup update
+
+in your terminal shell to install Julia 1.10.4+0.x64.linux.gnu and update the `release` channel to that version.
+Setting parameter 'TimeLimit' to 7200
+Model fingerprint: b765472f
+
+Using Cardinal Optimizer v7.0.6 on Linux
+Hardware has 96 cores and 192 threads. Using instruction set X86_AVX512_E1 (14)
+Minimizing a QP problem
+
+The original problem has:
+    200001 rows, 300000 columns and 1400644 non-zero elements
+    200000 quadratic objective elements
+The presolved problem has:
+    199998 rows, 300000 columns and 1400641 non-zero elements
+    200000 quadratic objective elements
+
+Starting barrier solver using 96 threads
+
+Problem info:
+Dualized in presolve:            No
+Range of matrix coefficients:    [7e-07,5e+00]
+Range of rhs coefficients:       [1e+00,1e+00]
+Range of bound coefficients:     [1e+00,1e+00]
+Range of cost coefficients:      [5e-07,5e+00]
+Range of quadcost coefficients:  [1e-03,3e+02]
+
+Factor info:
+Number of free columns:          199997
+Number of dense columns:         0
+Number of matrix entries:        6.405e+06
+Number of factor entries:        3.937e+09
+Number of factor flops:          2.310e+14
+
+Iter       Primal.Obj         Dual.Obj      Compl  Primal.Inf  Dual.Inf    Time
+   0  +1.41848690e-02  -2.24809829e+07   1.13e+10    5.00e+02  1.77e+00    466s
+   1  -2.81278739e+02  -2.23026163e+07   3.44e+07    5.41e-01  1.91e-03    922s
+   2  -3.84760210e+01  -2.09988934e+06   2.45e+06    2.84e-02  1.01e-04   1378s
+   3  +5.28535556e-02  -9.78147336e+02   1.03e+03    4.73e-06  1.68e-08   1835s
+   4  +3.59376620e-02  -8.30164471e+00   8.34e+00    1.35e-09  1.29e-12   2306s
+   5  -8.83731047e-01  -3.48795293e+00   2.60e+00    1.69e-10  3.87e-13   2864s
+   6  -2.08017893e+00  -3.40314979e+00   1.32e+00    6.29e-11  1.47e-13   3326s
+   7  -2.48295552e+00  -3.08604076e+00   6.03e-01    3.03e-11  6.62e-14   3794s
+   8  -2.69847762e+00  -2.87758692e+00   1.79e-01    7.74e-12  1.92e-14   4257s
+   9  -2.77689130e+00  -2.79016302e+00   1.33e-02    2.06e-13  3.03e-15   4791s
+  10  -2.78263034e+00  -2.78280684e+00   1.77e-04    6.54e-15  2.69e-15   5268s
+  11  -2.78271068e+00  -2.78271191e+00   1.24e-06    1.44e-15  2.85e-15   5767s
+  12  -2.78271132e+00  -2.78271136e+00   4.21e-08    3.00e-15  2.94e-15   6297s
+  13  -2.78271134e+00  -2.78271135e+00   2.56e-09    1.26e-13  3.01e-15   6857s
+  14  -2.78271134e+00  -2.78271134e+00   1.90e-10    9.46e-13  2.64e-15   7434s
+
+Barrier status:                  TIME_LIMIT
+Primal objective:                -2.78271134e+00
+Dual objective:                  -2.78271134e+00
+Duality gap (abs/rel):           1.86e-10 / 6.70e-11
+Primal infeasibility (abs/rel):  9.46e-13 / 9.46e-13
+Dual infeasibility (abs/rel):    2.64e-15 / 5.79e-16
+
+Solving unfinished
+Status: Timeout  Objective: 0.0000000000e+00  Iterations: 14  Time: 7435.74s
+Cardinal Optimizer v7.0.6. Build date Jan 16 2024
+Copyright Cardinal Operations 2023. All Rights Reserved
