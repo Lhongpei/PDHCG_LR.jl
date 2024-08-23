@@ -485,7 +485,7 @@ function optimize_gpu(
 )
     validate(original_problem)
     qp_cache = cached_quadratic_program_info(original_problem)
-    stopkkt_Q = true  #true means stop kkt is calculate by Q
+    stopkkt_Q = false  #true means stop kkt is calculate by Q
     empty_lb_inf = isempty(findall(original_problem.variable_lower_bound.>-Inf))
     empty_ub_inf = isempty(findall(original_problem.variable_upper_bound.<Inf))
     CG_switch = empty_lb_inf && empty_ub_inf
@@ -503,6 +503,7 @@ function optimize_gpu(
         original_problem,
     )
     #println(" begin to QP_constant")#FIXME
+    #=
     if stopkkt_Q 
 
         dim = length(scaled_problem.variable_rescaling)
@@ -517,6 +518,7 @@ function optimize_gpu(
         QP_constant = QP_constant_paramter_gpu(d_lorank_obj_matrix , d_scaled_P)
     
     end
+    =#
     #println("begin to size")#FIXME
     primal_size = length(scaled_problem.scaled_qp.variable_lower_bound)
     dual_size = length(scaled_problem.scaled_qp.right_hand_side)
@@ -706,49 +708,49 @@ function optimize_gpu(
                 avg_primal_gradient .= d_scaled_problem.scaled_qp.objective_vector .- buffer_avg.avg_dual_product .+ avg_primal_obj_product_Q
 
                 current_iteration_stats_avg = evaluate_unscaled_iteration_stats(
-                    d_scaled_problem,
-                    qp_cache,
-                    params.termination_criteria,
-                    params.record_iteration_stats,
-                    buffer_avg.avg_primal_solution,
-                    buffer_avg.avg_dual_solution,
-                    iteration,
-                    time() - start_time,
-                    solver_state.cumulative_kkt_passes,
-                    termination_criteria.eps_optimal_absolute,
-                    termination_criteria.eps_optimal_relative,
-                    solver_state.step_size,
-                    solver_state.primal_weight,
-                    POINT_TYPE_AVERAGE_ITERATE, 
-                    buffer_avg.avg_primal_product,
-                    buffer_avg.avg_dual_product,
-                    buffer_avg.avg_primal_gradient,
-                    buffer_avg.avg_primal_obj_product,
-                    buffer_original,
-                    buffer_kkt,
-                )
-                current_iteration_stats_current = evaluate_unscaled_iteration_stats(
-                    d_scaled_problem,
-                    qp_cache,
-                    params.termination_criteria,
-                    params.record_iteration_stats,
-                    solver_state.current_primal_solution,
-                    solver_state.current_dual_solution,
-                    iteration,
-                    time() - start_time,
-                    solver_state.cumulative_kkt_passes,
-                    termination_criteria.eps_optimal_absolute,
-                    termination_criteria.eps_optimal_relative,
-                    solver_state.step_size,
-                    solver_state.primal_weight,
-                    POINT_TYPE_AVERAGE_ITERATE, 
-                    solver_state.current_primal_product,
-                    solver_state.current_dual_product,
-                    buffer_primal_gradient,
-                    solver_state.current_primal_obj_product,
-                    buffer_original,
-                    buffer_kkt,
-                )
+                d_scaled_problem,
+                qp_cache,
+                params.termination_criteria,
+                params.record_iteration_stats,
+                buffer_avg.avg_primal_solution,
+                buffer_avg.avg_dual_solution,
+                iteration,
+                time() - start_time,
+                solver_state.cumulative_kkt_passes,
+                termination_criteria.eps_optimal_absolute,
+                termination_criteria.eps_optimal_relative,
+                solver_state.step_size,
+                solver_state.primal_weight,
+                POINT_TYPE_AVERAGE_ITERATE, 
+                buffer_avg.avg_primal_product,
+                buffer_avg.avg_dual_product,
+                avg_primal_gradient,
+                avg_primal_obj_product_Q,
+                buffer_original,
+                buffer_kkt,
+            )
+            current_iteration_stats_current = evaluate_unscaled_iteration_stats(
+                d_scaled_problem,
+                qp_cache,
+                params.termination_criteria,
+                params.record_iteration_stats,
+                solver_state.current_primal_solution,
+                solver_state.current_dual_solution,
+                iteration,
+                time() - start_time,
+                solver_state.cumulative_kkt_passes,
+                termination_criteria.eps_optimal_absolute,
+                termination_criteria.eps_optimal_relative,
+                solver_state.step_size,
+                solver_state.primal_weight,
+                POINT_TYPE_AVERAGE_ITERATE, 
+                solver_state.current_primal_product,
+                solver_state.current_dual_product,
+                buffer_primal_gradient,
+                current_primal_obj_product_Q,
+                buffer_original,
+                buffer_kkt,
+            )
             else
                 current_iteration_stats_avg = evaluate_unscaled_iteration_stats(
                 d_scaled_problem,

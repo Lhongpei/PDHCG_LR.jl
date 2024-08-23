@@ -8,7 +8,7 @@ folder_path = "./qptotal/"     # The folder path of the problems
 time_limit = 3600              # The time limit for each problem
 relat = 1e-6                   # The relative tolerance for the solver
 save_path = "saved_results/QP/$GPU_on"
-scale = Int(5e4)                 # The scale of the problem
+scale = Int(1e4)                 # The scale of the problem
 #---------------------------------------------
 #--------------------END----------------------
 
