@@ -1,22 +1,18 @@
 
 #-------------Running Parameters--------------
 #-----------------GPU setting-----------------
-GPU_on = 1                     # 1: use GPU; 0: use CPU
+GPU_on = 0                     # 1: use GPU; 0: use CPU
 GPU_id = 2                     # The GPU id if there are multiple GPUs (if there is only one GPU, set it to 0)
 #-----------------Task setting----------------
-folder_path = "./qptotal/"     # The folder path of the problems
 time_limit = 3600              # The time limit for each problem
 relat = 1e-6                   # The relative tolerance for the solver
 save_path = "saved_results/QP/$GPU_on"
-scale = Int(1e4)                 # The scale of the problem
+scale = 20               # The scale of the problem
 #---------------------------------------------
 #--------------------END----------------------
 
-# Start solving the problems
-file_names = readdir(folder_path)
-problem_num = length(file_names)
 
-function run_solver(generator, save_path, use_gpu=0, GPU_id=0, time_limit=3600, relat=1e-6, scale=100000)
+function run_solver(generator, save_path, use_gpu=0, GPU_id=0, time_limit=3600, relat=1e-6, scale=100)
     "
      `file_path`: Path to the quadratic programming instance file.
      `save_path`: Directory where the output files will be saved.
