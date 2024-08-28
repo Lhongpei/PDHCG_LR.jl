@@ -42,6 +42,17 @@ mutable struct CuBufferState
     CG_bound::Float64
 end
 
+function sparse_ratio(A)
+    nnz = count(!iszero, A)
+    return nnz / length(A)
+end
+
+function nonzeros(A)
+    nnz = count(!iszero, A)
+    return length(nnz)
+end
+
+
 function Pdhcg_specific_log(
     iteration::Int64,
     current_primal_solution::CuVector{Float64},
@@ -95,6 +106,24 @@ end
 """
 Compute primal solution in the next iteration
 """
+function compute_next_primal_solution_kernel_update2!(
+    next_primal::CuDeviceVector{Float64},
+    current_direction::CuDeviceVector{Float64},
+    CG_product::CuDeviceVector{Float64},
+    condition::CuDeviceVector{Float64},
+    alpha::Float64,
+)
+    tx = threadIdx().x + blockDim().x * (blockIdx().x - 1)
+    if tx <= length(next_primal)
+        @inbounds begin
+            CG_product[tx] = CG_product[tx] + alpha * condition[tx]*current_direction[tx]
+        end
+    end
+    return 
+end
+
+
+
 function compute_next_primal_solution!(
     problem::CuQuadraticProgrammingProblem,
     current_primal_solution::CuVector{Float64},
@@ -127,12 +156,15 @@ function compute_next_primal_solution!(
         CG_iter = 1
         next_primal .= current_primal_solution
 
+        NumBlockDual = ceil(Int64, problem.num_constraints/ThreadPerBlock)
+
         while CG_iter <= max_CG_iter
             gkgk = gg
             CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, current_direction, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
             CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, CG_product,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
 
             CG_product .+= (primal_weight / step_size .+ problem.condition).*current_direction
+
             dHd = CUDA.dot(current_direction, CG_product)
             alpha = gg / dHd
 
@@ -209,6 +241,7 @@ function compute_next_primal_solution_gd_BB!(
         CUDA.CUSPARSE.mv!('N', 1.0, problem.lorank_obj_matrix, next_primal, 0.0, tmp_rank_vec,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
         CUDA.CUSPARSE.mv!('T', 1.0, problem.lorank_obj_matrix, tmp_rank_vec, 0.0, current_gradient,'O', CUDA.CUSPARSE.CUSPARSE_SPMV_CSR_ALG2)
         current_gradient .= current_gradient .+ (primal_weight / step_size) .* ((1 .+ problem.condition) .* next_primal .- current_primal_solution) .+ problem.objective_vector .- current_dual_product
+        
         alpha = gg / CUDA.dot(inner_delta_primal, current_gradient .- last_gradient)
 
         CUDA.copyto!(last_primal, next_primal)
@@ -526,6 +559,22 @@ function optimize_gpu(
     if params.primal_importance <= 0 || !isfinite(params.primal_importance)
         error("primal_importance must be positive and finite")
     end
+
+    P_sparse_ratio = sparse_ratio(scaled_problem.scaled_qp.lorank_obj_matrix)
+    println("P_sparsity $P_sparse_ratio")
+    P_nonzeros = P_sparse_ratio*length(scaled_problem.scaled_qp.lorank_obj_matrix)
+    println("nonzeros_P $P_nonzeros")
+
+    Q_sparse_ratio = sparse_ratio(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
+    println("Q_sparsity $Q_sparse_ratio")
+    Q_nonzeros = Q_sparse_ratio*length(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
+    println("nonzeros_Q $Q_nonzeros")
+
+    A_sparse_ratio = sparse_ratio(scaled_problem.scaled_qp.constraint_matrix)
+    println("A_sparsity $A_sparse_ratio")
+    A_nonzeros = A_sparse_ratio*length(scaled_problem.scaled_qp.constraint_matrix)
+    println("nonzeros_A $A_nonzeros")
+
 
     #println("begin to GPU")#FIXME
     d_scaled_problem = scaledqp_cpu_to_gpu(scaled_problem)
