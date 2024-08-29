@@ -3,9 +3,9 @@ function generate_randomQP_problem(n::Int = 50000, seed::Int=1, sparsity::Float6
     m = Int(1 * n)
 
     # Generate problem data
-    P = sprandn(rank, n, sparsity)
+    P = sprandn(rank, n, 1e-2)
     q = randn(n)
-    A = sprandn(m, n, sparsity)
+    A = sprandn(m, n, 1e-2)
 
     v = randn(n)   # Fictitious solution
     delta = rand(m)  # To get inequality

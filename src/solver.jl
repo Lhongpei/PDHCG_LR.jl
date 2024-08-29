@@ -544,8 +544,8 @@ function optimize(
         params.verbosity,
         original_problem,
     )
+    #=
     if stopkkt_Q 
-
         scaled_Q =
             sparse(Diagonal(1 ./ scaled_problem.variable_rescaling)) *
             original_problem.objective_matrix *
@@ -553,18 +553,19 @@ function optimize(
 
         QP_constant = QP_constant_paramter(original_problem.objective_matrix,scaled_Q)
     end
-
+    =#
     primal_size = length(scaled_problem.scaled_qp.variable_lower_bound)
     dual_size = length(scaled_problem.scaled_qp.right_hand_side)
     num_eq = scaled_problem.scaled_qp.num_equalities
     if params.primal_importance <= 0 || !isfinite(params.primal_importance)
         error("primal_importance must be positive and finite")
     end
-
+    
     d_problem = scaled_problem.scaled_qp
 
-    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(d_problem.objective_matrix)
-    norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(d_problem.constraint_matrix)
+    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
+    norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(scaled_problem.scaled_qp.constraint_matrix)
+
 
     solver_state = PdhcgSolverState(
         zeros(Float64, primal_size),     # current_primal_solution
@@ -718,13 +719,17 @@ function optimize(
 
             ### KKT ###            
             if stopkkt_Q
-                current_primal_obj_product = QP_constant.Q_scaled * solver_state.current_primal_solution
-                avg_primal_obj_product = QP_constant.Q_scaled * buffer_avg.avg_primal_solution
+
+                solver_state.current_primal_obj_product .= scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix * solver_state.current_primal_solution 
+                solver_state.current_primal_obj_product .+= scaled_problem.scaled_qp.condition.*solver_state.current_primal_solution
+
+                buffer_avg.avg_primal_obj_product .= scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix * buffer_avg.avg_primal_solution
+                buffer_avg.avg_primal_obj_product .+= scaled_problem.scaled_qp.condition.*buffer_avg.avg_primal_solution
                 
                 buffer_primal_gradient .= scaled_problem.scaled_qp.objective_vector .- solver_state.current_dual_product
-                buffer_primal_gradient .+= current_primal_obj_product
+                buffer_primal_gradient .+= solver_state.current_primal_obj_product
 
-                buffer_avg_primal_gradient = scaled_problem.scaled_qp.objective_vector .- buffer_avg.avg_dual_product .+ avg_primal_obj_product
+                buffer_avg_primal_gradient = scaled_problem.scaled_qp.objective_vector .- buffer_avg.avg_dual_product .+ buffer_avg.avg_primal_obj_product
                 
                 current_iteration_stats_avg = evaluate_unscaled_iteration_stats(
                     scaled_problem,
@@ -744,7 +749,7 @@ function optimize(
                     buffer_avg.avg_primal_product,
                     buffer_avg.avg_dual_product,
                     buffer_avg_primal_gradient,
-                    avg_primal_obj_product,
+                    buffer_avg.avg_primal_obj_product,
                     buffer_original,
                     buffer_kkt,
                 )
@@ -766,7 +771,7 @@ function optimize(
                     solver_state.current_primal_product,
                     solver_state.current_dual_product,
                     buffer_primal_gradient,
-                    current_primal_obj_product,
+                    solver_state.current_primal_obj_product,
                     buffer_original,
                     buffer_kkt,
                 )
