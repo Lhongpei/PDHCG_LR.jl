@@ -209,7 +209,7 @@ else
 
     while CG_iter <= max_CG_iter
         gkgk = gg
-        CG_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * current_direction .+(primal_weight / step_size).*current_direction
+        CG_product .= (problem.lorank_obj_matrix' * problem.lorank_obj_matrix + spdiagm(problem.condition)) * current_direction .+(primal_weight / step_size).*current_direction
         dHd = dot(current_direction, CG_product)
         alpha = gg / dHd
         next_primal .= next_primal .- alpha.* current_direction
@@ -227,7 +227,7 @@ end
     next_primal_product .= problem.constraint_matrix * next_primal
 
      if mod(total_iteration,40)==1 || first_iter
-         next_primal_obj_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal
+         next_primal_obj_product .=(problem.lorank_obj_matrix' * problem.lorank_obj_matrix + spdiagm(problem.condition))* next_primal
      else
         next_primal_obj_product .= current_gradient .- problem.objective_vector .+ current_dual_product .- (primal_weight / step_size).*(next_primal .- current_primal_solution)
      end
@@ -286,7 +286,7 @@ function compute_next_primal_solution_gd_BB!(
         break
     end
     
-    current_gradient .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal .+(primal_weight / step_size).*(next_primal.-current_primal_solution).+ problem.objective_vector .-current_dual_product
+    current_gradient .= (problem.lorank_obj_matrix' * problem.lorank_obj_matrix + spdiagm(problem.condition)) * next_primal .+(primal_weight / step_size).*(next_primal.-current_primal_solution).+ problem.objective_vector .-current_dual_product
     alpha = gg/dot(inner_delta_primal,current_gradient.-last_gradient)
     last_primal.=next_primal
     last_gradient.=current_gradient
@@ -296,7 +296,7 @@ function compute_next_primal_solution_gd_BB!(
     k +=1
     end
 
-    next_primal_obj_product .= problem.lorank_obj_matrix' * problem.lorank_obj_matrix * next_primal
+    next_primal_obj_product .= (problem.lorank_obj_matrix' * problem.lorank_obj_matrix + spdiagm(problem.condition))* next_primal
     next_primal_product .= problem.constraint_matrix * next_primal
     CG_iter = min(k,max_CG_iter)
 
@@ -527,9 +527,9 @@ function optimize(
 )
     validate(original_problem)
     qp_cache = cached_quadratic_program_info(original_problem)
-    original_norm_Q = estimate_maximum_singular_value(original_problem.lorank_obj_matrix' * original_problem.lorank_obj_matrix)
+
     flag_update_CG_bound = false
-    stopkkt_Q = true
+    stopkkt_Q = false
 
     empty_lb_inf = isempty(findall(original_problem.variable_lower_bound.>-Inf))
     empty_ub_inf = isempty(findall(original_problem.variable_upper_bound.<Inf))
@@ -544,8 +544,8 @@ function optimize(
         params.verbosity,
         original_problem,
     )
-    #=
     if stopkkt_Q 
+
         scaled_Q =
             sparse(Diagonal(1 ./ scaled_problem.variable_rescaling)) *
             original_problem.objective_matrix *
@@ -553,7 +553,7 @@ function optimize(
 
         QP_constant = QP_constant_paramter(original_problem.objective_matrix,scaled_Q)
     end
-    =#
+
     primal_size = length(scaled_problem.scaled_qp.variable_lower_bound)
     dual_size = length(scaled_problem.scaled_qp.right_hand_side)
     num_eq = scaled_problem.scaled_qp.num_equalities
@@ -563,9 +563,8 @@ function optimize(
     
     d_problem = scaled_problem.scaled_qp
 
-    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
-    norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(scaled_problem.scaled_qp.constraint_matrix)
-
+    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(d_problem.objective_matrix)
+    norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(d_problem.constraint_matrix)
 
     solver_state = PdhcgSolverState(
         zeros(Float64, primal_size),     # current_primal_solution
