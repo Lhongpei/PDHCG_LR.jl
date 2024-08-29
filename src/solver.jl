@@ -544,6 +544,7 @@ function optimize(
         params.verbosity,
         original_problem,
     )
+    #=
     if stopkkt_Q 
 
         scaled_Q =
@@ -553,7 +554,7 @@ function optimize(
 
         QP_constant = QP_constant_paramter(original_problem.objective_matrix,scaled_Q)
     end
-
+    =#
     primal_size = length(scaled_problem.scaled_qp.variable_lower_bound)
     dual_size = length(scaled_problem.scaled_qp.right_hand_side)
     num_eq = scaled_problem.scaled_qp.num_equalities
@@ -563,7 +564,7 @@ function optimize(
     
     d_problem = scaled_problem.scaled_qp
 
-    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(d_problem.objective_matrix)
+    norm_Q, number_of_power_iterations_Q = estimate_maximum_singular_value(scaled_problem.scaled_qp.lorank_obj_matrix' * scaled_problem.scaled_qp.lorank_obj_matrix + spdiagm(scaled_problem.scaled_qp.condition))
     norm_A, number_of_power_iterations_A = estimate_maximum_singular_value(d_problem.constraint_matrix)
 
     solver_state = PdhcgSolverState(
