@@ -4,7 +4,6 @@
 GPU_on = 1                     # 1: use GPU; 0: use CPU
 GPU_id = 2                     # The GPU id if there are multiple GPUs (if there is only one GPU, set it to 0)
 #-----------------Task setting----------------
-folder_path = "./qptotal/"     # The folder path of the problems
 time_limit = 3600              # The time limit for each problem
 relat = 1e-6                   # The relative tolerance for the solver
 save_path = "saved_results/QP/$GPU_on"
